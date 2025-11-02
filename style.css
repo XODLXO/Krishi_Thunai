@@ -1,0 +1,115 @@
+/* ------------------------------------ */
+/* Global Resets and Utility Styles */
+/* ------------------------------------ */
+
+/* Ensure smooth transitions for all elements (used heavily by page sections) */
+* {
+    transition: all 0.3s ease-in-out;
+}
+
+/* Custom styles for the page sections, controlled by JS navigation */
+.page-section {
+    min-height: 70vh; /* Give sections height for better visual separation */
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+
+.page-section.hidden {
+    display: block !important; /* Override Tailwind's hidden utility for animation prep */
+    opacity: 0;
+    height: 0;
+    padding: 0;
+    margin: 0;
+    overflow: hidden;
+    pointer-events: none; /* Disable interaction when hidden */
+    transform: translateY(20px);
+}
+
+/* ------------------------------------ */
+/* Navigation Link Styles */
+/* ------------------------------------ */
+
+.nav-link {
+    color: #4B5563; /* krishi-earth */
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.nav-link:hover {
+    color: #047857; /* krishi-dark */
+    background-color: #ECFDF5; /* Emerald 50 */
+}
+
+.nav-link.active {
+    color: #047857; /* krishi-dark */
+    font-weight: 700;
+    border-bottom: 3px solid #10B981; /* krishi-green */
+    padding-bottom: 5px;
+}
+
+/* ------------------------------------ */
+/* Button and Form Styles */
+/* ------------------------------------ */
+
+/* Primary Button */
+.btn-primary {
+    @apply px-6 py-3 rounded-xl font-semibold text-white bg-krishi-green shadow-lg transition duration-200 ease-in-out;
+    @apply hover:bg-krishi-dark hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-krishi-green focus:ring-opacity-50;
+    white-space: nowrap; /* Prevent text wrap on small screens */
+}
+
+/* Primary Button Small (for Login/Auth) */
+.btn-primary-small {
+    @apply px-4 py-2 rounded-lg font-semibold text-white bg-krishi-green transition duration-200 ease-in-out;
+    @apply hover:bg-krishi-dark focus:outline-none focus:ring-2 focus:ring-krishi-green focus:ring-opacity-50;
+}
+
+/* Secondary Button */
+.btn-secondary {
+    @apply px-6 py-3 rounded-xl font-semibold text-krishi-dark border border-krishi-dark bg-white transition duration-200 ease-in-out;
+    @apply hover:bg-krishi-bg hover:border-krishi-dark focus:outline-none focus:ring-4 focus:ring-krishi-dark focus:ring-opacity-10;
+    white-space: nowrap;
+}
+
+/* Standard Input Fields */
+.input-field {
+    @apply w-full p-3 border border-gray-300 rounded-lg focus:border-krishi-green focus:ring-2 focus:ring-krishi-green focus:ring-opacity-50 transition duration-150;
+}
+
+.input-label {
+    @apply text-sm font-medium text-krishi-earth;
+}
+
+/* ------------------------------------ */
+/* Chatbot Specific Styles */
+/* ------------------------------------ */
+
+.chat-message {
+    @apply max-w-[80%] p-3 my-2 rounded-xl shadow-md;
+    word-wrap: break-word;
+}
+
+.chat-message.bot {
+    @apply self-start bg-krishi-green text-white rounded-tl-none;
+    margin-right: auto;
+}
+
+.chat-message.user {
+    @apply self-end bg-krishi-bg text-krishi-dark rounded-br-none border border-gray-200;
+    margin-left: auto;
+    text-align: right;
+}
+
+/* Small screen adjustments for padding */
+@media (max-width: 640px) {
+    .container {
+        padding: 0 1rem;
+    }
+
+    .page-section {
+        padding: 1rem;
+    }
+}
