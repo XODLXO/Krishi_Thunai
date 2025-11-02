@@ -6,18 +6,30 @@ let authMode = 'login'; // 'login' or 'register'
 const allSections = document.querySelectorAll('.page-section');
 
 function navigateTo(targetId) {
+    // 1. Hide all sections
     allSections.forEach(section => {
         // Use the 'hidden' class defined in style.css for smooth transitions
         section.classList.add('hidden');
     });
+    
+    // 2. Show the target section
     const targetSection = document.getElementById(targetId);
     if (targetSection) {
         targetSection.classList.remove('hidden');
     }
+
+    // 3. Update the active navigation link for visual feedback
+    document.querySelectorAll('.nav-link').forEach(link => {
+        link.classList.remove('active');
+        if (link.getAttribute('data-target') === targetId) {
+            link.classList.add('active');
+        }
+    });
 }
 
 // Initialize: Show only the home page on load and attach navigation listeners
 document.addEventListener('DOMContentLoaded', () => {
+    // Initial load should navigate to 'home' and set it active
     navigateTo('home');
     
     // Attach event listeners to navigation links
@@ -53,7 +65,8 @@ function updateAuthUI() {
 
 function logout() {
     isAuthenticated = false;
-    alert('Logged out successfully.'); // Using alert for simple feedback
+    // NOTE: Avoid using alert() in final applications, using a custom modal is better.
+    alert('Logged out successfully.'); 
     updateAuthUI();
 }
 
@@ -76,6 +89,7 @@ toggleAuthBtn.addEventListener('click', () => {
 document.getElementById('auth-form').addEventListener('submit', (e) => {
     e.preventDefault();
     const action = authMode === 'login' ? 'Login' : 'Registration';
+    // NOTE: Avoid using alert() in final applications, using a custom modal is better.
     alert(`${action} successful! (Mocked)`);
     isAuthenticated = true;
     authModal.classList.add('hidden');
