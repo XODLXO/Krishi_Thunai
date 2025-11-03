@@ -1,35 +1,31 @@
-# backend/core/predictor.py
 import torch
 from torchvision import transforms
 from PIL import Image
-from .model_loader import load_model 
+from model_loader import load_model # Assume model_loader.py is in the same directory
+import torch.nn.functional as F
 
-# ========= CONFIG & PATHS =========
+# 1. CONFIGURATION (Adjust based on your final model config)
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-# --- CORRECT LOCAL PATH ---
-MODEL_PATH = "models/hybrid_densenet_inception_resse_final.pth" 
+# NOTE: The model path is now relative to the API's file system
+MODEL_PATH = "model_trained/hybrid_densenet_inception_resse_final.pth" 
 
-# --- ACTION REQUIRED: REPLACE with your 13+ actual, ordered class names ---
-CLASS_NAMES = [
-    "class_1_name", 
-    "class_2_name", 
-    # ... fill in all your class names here! ...
-]
+# IMPORTANT: You must provide the actual list of class names here, 
+# as reading from a training path (TRAIN_PATH) is bad practice for a live API.
+# Replace the list below with your actual class names (e.g., ['healthy', 'disease_a', 'disease_b', ...])
+CLASS_NAMES = ['Class_1', 'Class_2', 'Class_3', 'Class_4', 'Class_5', 
+               'Class_6', 'Class_7', 'Class_8', 'Class_9', 'Class_10', 'Class_11', 'Class_12', 'Class_13']
 NUM_CLASSES = len(CLASS_NAMES)
-# -------------------------------------------------------------------------
+IMG_SIZE = 299
 
-# ========= LOAD MODEL (Runs on server startup) =========
+# 2. MODEL AND TRANSFORM LOADING
+# The model file MUST be in a folder named 'model_trained' in your backend repo.
 try:
-    print(f"Loading prediction model from: {MODEL_PATH}...")
     model = load_model(MODEL_PATH, NUM_CLASSES, DEVICE)
     model.eval()
-    print("Prediction model loaded successfully.")
 except Exception as e:
-    print(f"Error loading prediction model: {e}. Check models/ folder.")
-    model = None 
+    print(f"Error loading model: {e}")
+    model = None # Handle case where model file is not present yet
 
-# ========= IMAGE TRANSFORM =========
-IMG_SIZE = 299
 transform = transforms.Compose([
     transforms.Resize((IMG_SIZE, IMG_SIZE)),
     transforms.ToTensor(),
@@ -37,21 +33,30 @@ transform = transforms.Compose([
                          [0.229, 0.224, 0.225])
 ])
 
-def predict_image(user_image):
+def predict_crop_and_severity(image_bytes):
+    """Takes image bytes, returns prediction and severity."""
     if model is None:
-        raise Exception("Prediction Model not loaded.")
+        return {"error": "Model not loaded. Check deployment files."}, 500
         
-    img = user_image.convert("RGB")
+    img = Image.open(image_bytes).convert("RGB")
     img_tensor = transform(img).unsqueeze(0).to(DEVICE)
 
     with torch.no_grad():
         outputs = model(img_tensor)
+        
+        # 1. Prediction (Class & Confidence)
         probs = torch.softmax(outputs, dim=1)
         conf, pred_idx = torch.max(probs, dim=1)
         pred_class = CLASS_NAMES[pred_idx.item()]
         confidence = conf.item()
+        
+        # 2. Severity Estimation
+        # This severity calculation assumes your classes are ordered from least to most severe (1 to N)
+        severity_score = torch.sum(probs * torch.arange(1, NUM_CLASSES + 1, device=DEVICE, dtype=torch.float))
 
     return {
         "class": pred_class,
-        "confidence": round(confidence, 4)
+        "confidence": round(confidence, 4),
+        "severity_score": round(severity_score.item(), 4),
+        "status": "success"
     }
