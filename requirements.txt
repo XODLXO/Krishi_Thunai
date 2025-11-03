@@ -1,6 +1,8 @@
 # requirements.txt
-flask
 torch
 torchvision
 timm
 Pillow
+fastapi
+uvicorn
+python-multipart
