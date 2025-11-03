@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Krishi Thunai - Farmer Recommendation System</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <h1>🌾 Krishi Thunai</h1>
+        <nav>
+            </nav>
+    </header>
+
+    <main>
+        <section id="ai-detection">
+            <h2>AI-Based Crop & Disease Detection</h2>
+            <p>Upload an image of a leaf or crop to get an instant diagnosis and severity estimate.</p>
+
+            <div class="upload-area">
+                <input type="file" id="image-upload" accept="image/*" style="display: none;">
+                <button onclick="document.getElementById('image-upload').click()">Upload Image</button>
+
+                <div id="image-preview" class="image-preview" style="display: none;">
+                    <img id="preview-image" src="" alt="Image Preview">
+                </div>
+            </div>
+
+            <div id="result-area" class="result-area" style="display: none;">
+                <h3>Diagnosis Result:</h3>
+                <p><strong>Predicted Class:</strong> <span id="pred-class">...</span></p>
+                <p><strong>Confidence:</strong> <span id="pred-confidence">...</span></p>
+                <p><strong>Severity Score:</strong> <span id="pred-severity">...</span></p>
+                <button id="get-recommendation">Get Treatment & Crop Recommendation</button>
+            </div>
+        </section>
+
+        </main>
+
+    <footer>
+        <p>&copy; 2025 Krishi Thunai</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
