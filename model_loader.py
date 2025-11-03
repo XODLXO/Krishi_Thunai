@@ -1,53 +1,63 @@
-# backend/core/model_loader.py
+# model_loader.py
+
 import torch
-from torchvision import models
+import torch.nn as nn
 import timm
-from torch import nn
 
-class ResidualSE(nn.Module):
-    # ... (Your ResidualSE class definition) ...
-    def __init__(self, channels, reduction=16):
-        super().__init__()
-        self.fc1 = nn.Linear(channels, max(1, channels // reduction))
-        self.fc2 = nn.Linear(max(1, channels // reduction), channels)
-        self.act = nn.ReLU(inplace=True)
-        self.sigmoid = nn.Sigmoid()
-    def forward(self, x):
-        y = self.act(self.fc1(x))
-        y = self.sigmoid(self.fc2(y))
-        return x + x * y
-
+# 1. Define the custom Hybrid Model Architecture
 class HybridDenseInceptionSE(nn.Module):
-    # ... (Your HybridDenseInceptionSE class definition) ...
-    def __init__(self, num_classes, densenet_pretrained=False, inception_pretrained=False, se_reduction=16, dropout=0.3):
-        super().__init__()
-        dnet = models.densenet121(weights=models.DenseNet121_Weights.IMAGENET1K_V1 if densenet_pretrained else None)
-        self.densenet_features = dnet.features
-        densenet_dim = 1024
+    def __init__(self, num_classes=13, dense_pretrained=True, inception_pretrained=True, resse_pretrained=True):
+        super(HybridDenseInceptionSE, self).__init__()
 
-        inet = timm.create_model("inception_resnet_v2", pretrained=inception_pretrained, num_classes=1000)
-        with torch.no_grad():
-            dummy = torch.zeros(1, 3, 299, 299)
-            feat = inet.forward_features(dummy)
-            inception_dim = feat[-1].shape[1] if isinstance(feat, (list, tuple)) else feat.shape[1]
+        # Feature extractor 1: DenseNet121
+        densenet = timm.create_model('densenet121', pretrained=dense_pretrained, num_classes=0, global_pool='')
+        self.densenet_features = nn.Sequential(*list(densenet.children())[:-1])
+        dense_feature_dim = 1024 
 
-        self.inception = inet
-        self.pool = nn.AdaptiveAvgPool2d(1)
-        fused_dim = densenet_dim + inception_dim
-        self.res_se = ResidualSE(fused_dim, se_reduction)
-        self.dropout = nn.Dropout(dropout)
-        self.classifier = nn.Linear(fused_dim, num_classes)
+        # Feature extractor 2: Inception_V4
+        inception = timm.create_model('inception_v4', pretrained=inception_pretrained, num_classes=0, global_pool='avg')
+        self.inception_features = inception
+        inception_feature_dim = 1536 
+
+        # Feature extractor 3: ResNeSt50d (or similar Res-SE block)
+        resse = timm.create_model('resnest50d', pretrained=resse_pretrained, num_classes=0, global_pool='avg')
+        self.resse_features = resse
+        resse_feature_dim = 2048 
+        
+        # Combined dimension
+        combined_dim = dense_feature_dim + inception_feature_dim + resse_feature_dim
+        
+        # Classifier head
+        self.classifier = nn.Sequential(
+            nn.Linear(combined_dim, 1024),
+            nn.ReLU(),
+            nn.Dropout(0.5),
+            nn.Linear(1024, num_classes)
+        )
 
     def forward(self, x):
-        d = self.pool(self.densenet_features(x)).flatten(1)
-        i = self.pool(self.inception.forward_features(x)).flatten(1)
-        f = self.res_se(torch.cat([d, i], 1))
-        return self.classifier(self.dropout(f))
+        # DenseNet feature extraction (needs pooling)
+        dense_x = self.densenet_features(x)
+        dense_x = nn.functional.adaptive_avg_pool2d(dense_x, 1).view(x.size(0), -1)
 
-def load_model(weight_path, num_classes, device):
-    # Uses the path passed from predictor.py
-    model = HybridDenseInceptionSE(num_classes)
-    state = torch.load(weight_path, map_location=device)
-    model.load_state_dict(state, strict=False)
-    model.to(device).eval()
+        # Inception and ResSE features (already pooled)
+        inception_x = self.inception_features(x)
+        resse_x = self.resse_features(x)
+
+        # Concatenate
+        combined_features = torch.cat((dense_x, inception_x, resse_x), dim=1)
+        
+        # Classification
+        return self.classifier(combined_features)
+
+# 2. Loading Function
+def load_model(model_path, num_classes, device):
+    """Loads the model state dictionary."""
+    model = HybridDenseInceptionSE(num_classes=num_classes, dense_pretrained=False, inception_pretrained=False, resse_pretrained=False)
+    
+    # Load state dict, mapping to CPU if necessary for deployment
+    state_dict = torch.load(model_path, map_location=device)
+    model.load_state_dict(state_dict)
+    
+    model.to(device)
     return model
