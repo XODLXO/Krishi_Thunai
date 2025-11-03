@@ -1,0 +1,6 @@
+# requirements.txt
+flask
+torch
+torchvision
+timm
+Pillow
